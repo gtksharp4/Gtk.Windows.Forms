@@ -170,6 +170,16 @@ public static class MainThreadTestHost
                 Console.Out.Flush();
             }
         };
+        runner.OnTestFinished = info =>
+        {
+            // Pair with OnTestStarting: the test that started but never finished is the one that crashed the
+            // process natively. Flush so the markers survive a SIGSEGV. macOS-only path (vstest elsewhere).
+            lock (gate)
+            {
+                Console.WriteLine($"  <- {info.TestDisplayName}");
+                Console.Out.Flush();
+            }
+        };
         runner.OnTestFailed = info =>
         {
             lock (gate)
