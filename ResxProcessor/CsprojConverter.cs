@@ -43,9 +43,24 @@ internal static class CsprojConverter
     {
         var result = TargetFrameworkElement.Replace(content, match =>
         {
+            var value = match.Groups["value"].Value;
+            if (!WindowsMoniker.IsMatch(value))
+            {
+                // No Windows moniker to strip (singular or multi-target, already cross-platform):
+                // leave the element's text exactly as written.
+                return match.Value;
+            }
+
+            // Both <TargetFramework> and <TargetFrameworks> are handled: split on ';' (a no-op for the
+            // singular form), strip the moniker from each entry, then drop blanks and de-duplicate so a
+            // list like "net10.0-windows;net10.0" collapses to "net10.0" instead of a duplicate TFM.
             var name = match.Groups[1].Value;
-            var stripped = WindowsMoniker.Replace(match.Groups["value"].Value, string.Empty);
-            return $"<{name}>{stripped}</{name}>";
+            var frameworks = string.Join(";", value
+                .Split(';')
+                .Select(tfm => WindowsMoniker.Replace(tfm.Trim(), string.Empty))
+                .Where(tfm => tfm.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase));
+            return $"<{name}>{frameworks}</{name}>";
         });
 
         result = UseWindowsFormsTrue.Replace(result, string.Empty);
