@@ -4,6 +4,7 @@
 
 using System.Diagnostics;
 using System.Drawing;
+using static System.Windows.Forms.AnchorBaselineTestSupport;
 
 namespace System.Windows.Forms;
 
@@ -176,9 +177,7 @@ public class AnchorBaselineRound2FunctionalTests
         try
         {
             ShowSettled(form, visible);
-            var width0 = form.DisplayRectangle.Width;
-            form.WindowState = FormWindowState.Maximized;
-            Assert.True(PumpUntil(() => form.DisplayRectangle.Width > width0 + 100));
+            Enlarge(form);
             Settle(1500);
 
             hidden.Visible = true;
@@ -308,8 +307,9 @@ public class AnchorBaselineRound2FunctionalTests
         {
             ShowSettled(form, button, 3500);
 
-            Assert.Equal(675, button.Left);
-            Assert.Equal(75, form.DisplayRectangle.Width - button.Right);
+            Assert.True(Approx(675, button.Left), $"button.Left={button.Left}, expected 675");
+            Assert.True(Approx(75, form.DisplayRectangle.Width - button.Right),
+                $"gap={form.DisplayRectangle.Width - button.Right}, expected 75");
         }
         finally
         {

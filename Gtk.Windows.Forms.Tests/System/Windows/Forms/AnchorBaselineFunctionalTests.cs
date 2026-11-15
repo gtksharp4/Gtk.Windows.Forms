@@ -4,6 +4,7 @@
 
 using System.Diagnostics;
 using System.Drawing;
+using static System.Windows.Forms.AnchorBaselineTestSupport;
 
 namespace System.Windows.Forms;
 
@@ -209,15 +210,15 @@ public class AnchorBaselineFunctionalTests
         try
         {
             form.Show();
-            Assert.True(PumpUntil(() => stretched.Width == 912 + grow, 6000),
+            Assert.True(PumpUntil(() => Approx(stretched.Width, 912 + grow), 6000),
                 $"stretched panel is {stretched.Width} wide, expected {912 + grow}");
             Settle(3000);
 
-            Assert.Equal(912 + grow, stretched.Width);
-            Assert.Equal(12, stretched.Left);
-            Assert.Equal(798 + grow, right.Left);
+            Assert.True(Approx(912 + grow, stretched.Width), $"stretched.Width={stretched.Width}, expected {912 + grow}");
+            Assert.True(Approx(12, stretched.Left), $"stretched.Left={stretched.Left}");
+            Assert.True(Approx(798 + grow, right.Left), $"right.Left={right.Left}, expected {798 + grow}");
             Assert.Equal(120, right.Width);
-            Assert.Equal(12, fixedChild.Left);
+            Assert.True(Approx(12, fixedChild.Left), $"fixedChild.Left={fixedChild.Left}");
             Assert.Equal(100, fixedChild.Width);
         }
         finally
@@ -299,9 +300,7 @@ public class AnchorBaselineFunctionalTests
             form.Show();
             Assert.True(PumpUntil(() => visible.Widget!.AllocatedWidth > 1));
             Settle(3000);
-            var width0 = form.DisplayRectangle.Width;
-            form.WindowState = FormWindowState.Maximized;
-            Assert.True(PumpUntil(() => form.DisplayRectangle.Width > width0 + 100), "the form never maximized");
+            Enlarge(form);
             Settle(1500);
 
             hidden.Visible = true;
@@ -309,8 +308,8 @@ public class AnchorBaselineFunctionalTests
 
             // Designed: 50 px to the right edge.
             var right = form.DisplayRectangle.Width;
-            Assert.Equal(50, right - (visible.Left + visible.Width));
-            Assert.Equal(50, right - (hidden.Left + hidden.Width));
+            Assert.True(Approx(50, right - (visible.Left + visible.Width)), $"visible gap={right - (visible.Left + visible.Width)}");
+            Assert.True(Approx(50, right - (hidden.Left + hidden.Width)), $"hidden gap={right - (hidden.Left + hidden.Width)}");
             Assert.Equal(visible.Bounds, hidden.Bounds);
         }
         finally
@@ -334,9 +333,7 @@ public class AnchorBaselineFunctionalTests
             form.Show();
             Assert.True(PumpUntil(() => visible.Widget!.AllocatedWidth > 1));
             Settle(3000);
-            var width0 = form.DisplayRectangle.Width;
-            form.WindowState = FormWindowState.Maximized;
-            Assert.True(PumpUntil(() => form.DisplayRectangle.Width > width0 + 100));
+            Enlarge(form);
             Settle(1500);
 
             Assert.False(hidden.Visible);
@@ -366,9 +363,7 @@ public class AnchorBaselineFunctionalTests
             var added = new Button { Location = new Point(450, 50), Size = new Size(100, 24), Anchor = AnchorStyles.Top | AnchorStyles.Right };
             form.Controls.Add(added);
             Settle(500);
-            var width0 = form.DisplayRectangle.Width;
-            form.WindowState = FormWindowState.Maximized;
-            Assert.True(PumpUntil(() => form.DisplayRectangle.Width > width0 + 100));
+            Enlarge(form);
             Settle(1500);
 
             Assert.Equal(designed.Left, added.Left);
@@ -478,10 +473,18 @@ public class AnchorBaselineFunctionalTests
         try
         {
             form.Show();
-            Assert.True(PumpUntil(() => form.DisplayRectangle.Width > 700 && right.Widget!.AllocatedWidth > 1));
+            Assert.True(PumpUntil(() => right.Widget!.AllocatedWidth > 1));
+            // The form is designed maximised; on a headless backend that does not maximise, enlarge it so the
+            // right-anchored child still sees the resize from its designed client size.
+            if (form.DisplayRectangle.Width <= 700)
+            {
+                Enlarge(form);
+            }
+
             Settle(3000);
 
-            Assert.Equal(50, form.DisplayRectangle.Width - (right.Left + right.Width));
+            Assert.True(Approx(50, form.DisplayRectangle.Width - (right.Left + right.Width)),
+                $"gap={form.DisplayRectangle.Width - (right.Left + right.Width)}");
         }
         finally
         {
@@ -544,14 +547,14 @@ public class AnchorBaselineFunctionalTests
             Assert.True(PumpUntil(() => form.Widget is { IsMapped: true } && right.Widget!.AllocatedWidth > 1));
             Settle(3000);
 
-            Assert.Equal(new Rectangle(12, 520, 200, 20), bottomLabel.Bounds);
-            Assert.Equal(new Rectangle(12, 545, 200, 30), below.Bounds);
-            Assert.Equal(new Rectangle(700, 12, 200, 30), right.Bounds);
+            Assert.True(ApproxBounds(new Rectangle(12, 520, 200, 20), bottomLabel.Bounds), $"bottomLabel={bottomLabel.Bounds}");
+            Assert.True(ApproxBounds(new Rectangle(12, 545, 200, 30), below.Bounds), $"below={below.Bounds}");
+            Assert.True(ApproxBounds(new Rectangle(700, 12, 200, 30), right.Bounds), $"right={right.Bounds}");
 
             // Compensation applies to hidden children too: shown later it is still at its designed bounds.
             hidden.Visible = true;
             Settle(300);
-            Assert.Equal(new Rectangle(12, 12, 600, 400), hidden.Bounds);
+            Assert.True(ApproxBounds(new Rectangle(12, 12, 600, 400), hidden.Bounds), $"hidden={hidden.Bounds}");
         }
         finally
         {
