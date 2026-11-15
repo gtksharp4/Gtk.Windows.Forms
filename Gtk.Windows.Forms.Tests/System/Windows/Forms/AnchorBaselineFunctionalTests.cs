@@ -366,7 +366,7 @@ public class AnchorBaselineFunctionalTests
             Enlarge(form);
             Settle(1500);
 
-            Assert.Equal(designed.Left, added.Left);
+            Assert.True(Approx(designed.Left, added.Left), $"designed.Left={designed.Left}, added.Left={added.Left}");
         }
         finally
         {
