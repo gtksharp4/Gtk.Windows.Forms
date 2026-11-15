@@ -170,23 +170,6 @@ public static class MainThreadTestHost
                 Console.Out.Flush();
             }
         };
-        runner.OnTestFinished = info =>
-        {
-            lock (gate)
-            {
-                Console.WriteLine($"  <- {info.TestDisplayName}");
-                Console.Out.Flush();
-            }
-
-            // Drain Mono.Cairo surface finalizers here, between tests, while the main thread is idle. A
-            // Cairo.Surface left undisposed is otherwise destroyed by the GC finalizer thread at an arbitrary
-            // moment - and on the macOS Quartz backend a native surface destroy that races a drawing or
-            // encode call on the main thread takes the whole process down (a SIGSEGV, no managed exception).
-            // Forcing the collection now runs that destroy while nothing else touches Cairo. This path is
-            // reached only under 'dotnet <assembly>.dll' (macOS); Windows/Linux use vstest and never run it.
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-        };
         runner.OnTestFailed = info =>
         {
             lock (gate)

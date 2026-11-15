@@ -693,25 +693,34 @@ public abstract class Image : MarshalByRefObject, IDisposable, ICloneable, ISeri
         if (type == "bmp")
         {
             System.IO.File.WriteAllBytes(filename, BmpImageCodec.Encode(Pixbuf));
+            return;
         }
-        else if (type == "jpeg")
+
+        // Encode to a buffer and write the file ourselves instead of Gdk.Pixbuf.Save(filename): that native
+        // file saver segfaults for PNG on the macOS (Quartz/arm64) runtime, taking the whole process down with
+        // no managed exception. SaveToBuffer is the same encoder the stream overload uses and does not crash;
+        // routing the file overload through it also makes file and stream saves identical. JPEG cannot carry
+        // alpha (and the glycin saver rejects RGBA), so encode an RGB copy - matching GDI+.
+        var encodeType = type is "png" or "jpeg" or "tiff" or "ico" ? type! : "png";
+        var toEncode = encodeType == "jpeg" ? WithoutAlpha(Pixbuf) : Pixbuf;
+        try
         {
-            var opaque = WithoutAlpha(Pixbuf);
-            try
+            System.IO.File.WriteAllBytes(filename, toEncode.SaveToBuffer(encodeType));
+        }
+        catch (GLib.GException ex)
+        {
+            System.Diagnostics.GtkLogger.Debug($"Pixbuf.SaveToBuffer('{encodeType}') failed in Image.Save(filename)", ex);
+            if (PixbufData != null)
             {
-                opaque.Save(filename, type);
-            }
-            finally
-            {
-                if (!ReferenceEquals(opaque, Pixbuf))
-                {
-                    opaque.Dispose();
-                }
+                System.IO.File.WriteAllBytes(filename, PixbufData);
             }
         }
-        else
+        finally
         {
-            Pixbuf.Save(filename, type);
+            if (!ReferenceEquals(toEncode, Pixbuf))
+            {
+                toEncode.Dispose();
+            }
         }
     }
 
