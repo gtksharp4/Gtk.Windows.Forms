@@ -58,6 +58,38 @@ public class CsprojConverterTests
     }
 
     [Fact]
+    public void Transform_DeduplicatesTfms_WhenStrippingCollidesWithExistingTarget()
+    {
+        var result = CsprojConverter.Transform(
+            "<TargetFrameworks>net10.0-windows;net10.0</TargetFrameworks>", out var changed);
+
+        Assert.True(changed);
+        Assert.Equal("<TargetFrameworks>net10.0</TargetFrameworks>", result);
+    }
+
+    [Fact]
+    public void Transform_DeduplicatesTfms_PreservingFirstSeenOrder()
+    {
+        var result = CsprojConverter.Transform(
+            "<TargetFrameworks>net8.0-windows;net10.0-windows;net8.0</TargetFrameworks>", out _);
+
+        Assert.Equal("<TargetFrameworks>net8.0;net10.0</TargetFrameworks>", result);
+    }
+
+    [Fact]
+    public void Transform_LeavesCrossPlatformTargetFrameworksUntouched()
+    {
+        // No Windows moniker anywhere: the element (and its spacing) must be left exactly as written,
+        // even though a value like this could otherwise be "normalised".
+        const string tfms = "<TargetFrameworks>net8.0; net10.0</TargetFrameworks>";
+
+        var result = CsprojConverter.Transform(tfms, out var changed);
+
+        Assert.False(changed);
+        Assert.Equal(tfms, result);
+    }
+
+    [Fact]
     public void Transform_IsIdempotent()
     {
         var once = CsprojConverter.Transform(WindowsProject, out _);

@@ -59,7 +59,9 @@ git-tracked, not gitignored, and not re-emitted by the pipeline — safe to edit
 
 **Tool mode (`ResxProcessor --convert-project <csproj>`)** — `ResxProcessor/CsprojConverter.cs`:
 - Textual, minimal-diff transform (`Transform`, pure + unit-tested) over the raw `.csproj`:
-  - strip `-windows[10.0.x]` from each `TargetFramework`/`TargetFrameworks` moniker → `net<ver>`;
+  - strip `-windows[10.0.x]` from each `TargetFramework`/`TargetFrameworks` moniker → `net<ver>`,
+    de-duplicating the result so `net10.0-windows;net10.0` collapses to `net10.0` (no duplicate TFM);
+    a multi-target value with no Windows moniker is left byte-for-byte untouched;
   - remove the whole `<UseWindowsForms>true</UseWindowsForms>` line.
 - Idempotent (no-op when already converted); preserves surrounding text and the UTF-8 BOM state.
 - `Program.DoWork` dispatches `--convert-project` **before** the resx path and **runs no instance
