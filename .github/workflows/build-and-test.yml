@@ -108,18 +108,17 @@ jobs:
           main_thread_projects=" Gtk.Drawing.Tests Gtk.Windows.Forms.Tests AutoClosingMessageBox.Tests "
           for p in "${projects[@]}"; do
             name="$(basename "$p" .csproj)"
-            # Resolve the built assembly under whatever target framework it uses (the projects mix net8.0 and
-            # net10.0), rather than assuming one. A project absent from this OS's solution filter (e.g.
-            # AutoClosingMessageBox.Tests, which pulls in a sample app not built on Linux/macOS) has no output;
-            # skip it with a visible notice instead of hard-failing on a missing directory.
-            dll="$(ls "$(dirname "$p")"/bin/Debug/*/"$name.dll" 2>/dev/null | head -1)"
-            if [ -z "$dll" ]; then
-              echo "::notice::Skipping $name: no built test assembly (not in this OS's solution filter)."
-              continue
-            fi
             if [ "$RUNNER_OS" = "macOS" ] && [[ "$main_thread_projects" == *" $name "* ]]; then
               # Run from the output folder, as vstest would, so relative test paths resolve the same way.
-              (cd "$(dirname "$dll")" && dotnet "$name.dll")
+              # AutoClosingMessageBox.Tests is not in the NonWindows solution filter (it pulls in a sample app
+              # not built on Linux/macOS), so its output is absent here - skip it with a notice rather than
+              # hard-failing on the missing directory. (The main-thread projects all target net10.0.)
+              outdir="$(dirname "$p")/bin/Debug/net10.0"
+              if [ ! -d "$outdir" ]; then
+                echo "::notice::Skipping $name on macOS: $outdir was not built (not in the NonWindows solution filter)."
+                continue
+              fi
+              (cd "$outdir" && dotnet "$name.dll")
             else
               "${prefix[@]}" dotnet test "$p" --configuration Debug --no-build --logger "trx;LogFileName=$name.trx"
             fi
