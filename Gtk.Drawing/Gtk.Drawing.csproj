@@ -12,14 +12,14 @@
         <Company>Piero Viano</Company>
         <Copyright>Copyright (c) Piero Viano. All right reserved.</Copyright>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-        <PackageProjectUrl>https://pieroviano.github.io/GtkWindowsForms/</PackageProjectUrl>
+        <PackageProjectUrl>https://gtksharp4.github.io/GtkWindowsForms/</PackageProjectUrl>
         <PackageReleaseNotes>C# interface cross-platform development component gtk-windows-forms</PackageReleaseNotes>
         <Title>GTK cross-platform drawing interface component, compiled once, can run on windows, linux, macos platforms</Title>
         <Description>
       It is a cross-platform interface component developed based on GTK components and compatible with the native C# control winform interface.
       Use this component GtkSystem.Drawing to compile once and run across platforms windows/linux/macos.
       Update platform:
-      https://github.com/pieroviano/GtkWindowsForms.git
+      https://github.com/gtksharp4/GtkWindowsForms.git
 
       Based on GTKSystem.Windows.Forms:
       https://www.gtkapp.com；
