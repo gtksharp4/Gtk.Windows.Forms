@@ -158,6 +158,28 @@ public static class MainThreadTestHost
                 Console.WriteLine($"Running {info.TestCasesToRun} of {info.TestCasesDiscovered} tests in {assemblyName} on the main thread...");
             }
         };
+        runner.OnTestStarting = info =>
+        {
+            // A native crash (e.g. a Cairo/Pango call on the macOS runner) takes the whole process down with
+            // no managed exception, so the only record of the culprit is the test that started but never
+            // finished. Flush so those lines survive the SIGSEGV. This path runs only under
+            // 'dotnet <assembly>.dll' (macOS); Windows/Linux go through vstest and never reach it.
+            lock (gate)
+            {
+                Console.WriteLine($"  -> {info.TestDisplayName}");
+                Console.Out.Flush();
+            }
+        };
+        runner.OnTestFinished = info =>
+        {
+            // Pair with OnTestStarting: the test that started but never finished is the one that crashed the
+            // process natively. Flush so the markers survive a SIGSEGV. macOS-only path (vstest elsewhere).
+            lock (gate)
+            {
+                Console.WriteLine($"  <- {info.TestDisplayName}");
+                Console.Out.Flush();
+            }
+        };
         runner.OnTestFailed = info =>
         {
             lock (gate)

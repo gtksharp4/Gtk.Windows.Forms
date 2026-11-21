@@ -4274,8 +4274,10 @@ public partial class Control : Component, IControl, ISynchronizeInvoke, ICompone
                 {
                     if (!Directory.Exists(imgdir))
                         Directory.CreateDirectory(imgdir);
-                    var imagepixbuf = new Gdk.Pixbuf(this._image.PixbufData);
-                    imagepixbuf.Save(imguri, "png");
+                    using var imagepixbuf = new Gdk.Pixbuf(this._image.PixbufData);
+                    // Encode via SaveToBuffer + managed write, not Gdk.Pixbuf.Save(filename): the native PNG
+                    // file saver segfaults on the macOS Quartz/arm64 runtime (same cause as Image.Save).
+                    File.WriteAllBytes(imguri, imagepixbuf.SaveToBuffer("png"));
                 }
                 // Absolute file URI - see the note on the background-image branch below: a relative url()
                 // in a stylesheet loaded from a string resolves to nothing on Gtk4.

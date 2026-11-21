@@ -110,7 +110,15 @@ jobs:
             name="$(basename "$p" .csproj)"
             if [ "$RUNNER_OS" = "macOS" ] && [[ "$main_thread_projects" == *" $name "* ]]; then
               # Run from the output folder, as vstest would, so relative test paths resolve the same way.
-              (cd "$(dirname "$p")/bin/Debug/net10.0" && dotnet "$name.dll")
+              # AutoClosingMessageBox.Tests is not in the NonWindows solution filter (it pulls in a sample app
+              # not built on Linux/macOS), so its output is absent here - skip it with a notice rather than
+              # hard-failing on the missing directory. (The main-thread projects all target net10.0.)
+              outdir="$(dirname "$p")/bin/Debug/net10.0"
+              if [ ! -d "$outdir" ]; then
+                echo "::notice::Skipping $name on macOS: $outdir was not built (not in the NonWindows solution filter)."
+                continue
+              fi
+              (cd "$outdir" && dotnet "$name.dll")
             else
               "${prefix[@]}" dotnet test "$p" --configuration Debug --no-build --logger "trx;LogFileName=$name.trx"
             fi
