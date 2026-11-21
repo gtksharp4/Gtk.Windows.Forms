@@ -20,6 +20,15 @@
         <NoWarn>$(NoWarn);CS0067;CS0169;CS0419;CS0536;MSB3243</NoWarn>
     </PropertyGroup>
     <!--
+    CI only: the upstream submodule projects use the Gtk 3 GtkSharp package, whose InstallGtk target downloads
+    gtk-3.24.24.zip on Windows once per target framework. The parallel inner builds race on the same gtk.zip
+    ("being used by another process", MSB3923). CI only compiles these projects and never runs Gtk 3, so skip
+    the download there; local builds keep the automatic install.
+    -->
+    <PropertyGroup Condition="'$(CI)' == 'true' and $(MSBuildProjectDirectory.Replace('\', '/').Contains('/gtksystem-windows-forms/'))">
+        <SkipGtkInstall Condition="'$(SkipGtkInstall)' == ''">True</SkipGtkInstall>
+    </PropertyGroup>
+    <!--
     Package versions the shipped libraries reference.
 
     The binding is now Net4x.GtkSharp (Gtk 4), consumed as "$(GtkSharp4LatestVersion).*" = 4.22.4.*.

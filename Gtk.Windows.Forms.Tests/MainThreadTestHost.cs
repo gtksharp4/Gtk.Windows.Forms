@@ -141,7 +141,11 @@ public static class MainThreadTestHost
         var stopwatch = Stopwatch.StartNew();
 
         using var finished = new ManualResetEventSlim();
-        using var runner = AssemblyRunner.WithoutAppDomain(assemblyPath);
+        // Deliberately not disposed: xUnit v2's Start work item calls executionCompleteEvent.WaitOne() after
+        // RunTests returns, but the in-process run has already set that event, so Status reads Idle while the
+        // worker has yet to reach WaitOne. Disposing here makes that WaitOne throw ObjectDisposedException on
+        // an xUnit worker thread, which aborts the process after all tests passed. The process exits next.
+        var runner = AssemblyRunner.WithoutAppDomain(assemblyPath);
 
         if (filter != null)
         {
@@ -224,7 +228,7 @@ public static class MainThreadTestHost
         runner.Start(new AssemblyRunnerStartOptions { PreEnumerateTheories = false });
         finished.Wait();
 
-        // AssemblyRunner.Dispose throws while the runner is still winding down after ExecutionComplete.
+        // Let the runner finish winding down after ExecutionComplete before reporting.
         while (runner.Status != AssemblyRunnerStatus.Idle)
         {
             Thread.Sleep(50);
