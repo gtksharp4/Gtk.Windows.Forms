@@ -33,7 +33,10 @@ public class CaptureAndCompareTests
 
         using var shot = ui.Capture();
 
-        Assert.Equal(new Size(300, 200), new Size(shot.Width, shot.Height));
+        // Compared with the allocated client size, not the designed 300x200: without a compositor (Xvfb) GTK
+        // draws a solid CSD frame inside the window's default size, leaving the client a few pixels narrower.
+        Assert.Equal(ui.Form.ClientSize, new Size(shot.Width, shot.Height));
+        Assert.True(Math.Abs(shot.Width - 300) <= 8 && Math.Abs(shot.Height - 200) <= 8, $"capture is {shot.Width}x{shot.Height}");
         var opaque = 0;
         for (var y = 0; y < shot.Height; y += 4)
         {
