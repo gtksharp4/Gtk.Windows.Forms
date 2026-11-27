@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <DocumentationFile>$(MSBuildProjectDirectory)\$(MSBuildProjectName).xml</DocumentationFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <Version>$(VersionPrefix).$(VersionSuffix)</Version>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <PackAsTool>False</PackAsTool>
+        <SignAssembly>true</SignAssembly>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Authors>Piero Viano</Authors>
+        <Company>Piero Viano</Company>
+        <Copyright>Copyright (c) Piero Viano. All right reserved.</Copyright>
+        <Title>xUnit runner for Gtk.Windows.Forms UI automation</Title>
+        <Description>An xUnit v2 test framework that runs every test of an assembly on one dedicated thread (STA on Windows, as GDK 4 requires) with GTK initialized before the first test, so Gtk.Windows.Forms.Automation tests and any test creating Gtk.Windows.Forms controls run safely. Activate with [assembly: TestFramework(GtkTestFramework.TypeName, GtkTestFramework.AssemblyName)].</Description>
+        <PackageTags>gtk;winforms;ui-automation;testing;xunit</PackageTags>
+        <PackageProjectUrl>https://gtksharp4.github.io/GtkWindowsForms/</PackageProjectUrl>
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+        <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+        <RootNamespace>Gtk.Windows.Forms.Automation.Xunit</RootNamespace>
+        <PackageOutputPath>$(SolutionDir)Packages/</PackageOutputPath>
+        <AssemblyOriginatorKeyFile>..\GtkForms.snk</AssemblyOriginatorKeyFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <NoWarn>$(NoWarn);NU5118</NoWarn>
+        <PackageId>Gtk.Windows.Forms.Automation.Xunit</PackageId>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Net4x.CleanCache" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="xunit.extensibility.execution" Version="2.9.3" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Gtk.Windows.Forms.Automation\Gtk.Windows.Forms.Automation.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="README.md" Link="README.md" Pack="true" PackagePath="\README.md" />
+        <None Include="..\gtksystem-windows-forms\Source\licenses\LICENSE.txt" Pack="true" PackagePath="\" />
+        <None Include="..\THIRD-PARTY-NOTICES.txt" Pack="true" PackagePath="\" />
+    </ItemGroup>
+</Project>
