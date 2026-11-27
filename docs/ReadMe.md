@@ -22,5 +22,7 @@ This page indexes the documentation in this folder.
   `System.Drawing`; lists what is still missing.
 - [Emulation gaps](./EMULATION-GAPS.md) — Where behaviour differs from `System.Windows.Forms` /
   `System.Drawing`, including the non-goals that will not be implemented.
+- [UI automation](./UI-Automation.md) — Testing applications' forms with `Gtk.Windows.Forms.Automation`:
+  driving input, scripting message boxes, waiting, screenshot baselines, CI and troubleshooting.
 - [Gtk.Resources.Extensions](./Gtk.Resources.Extensions.md) — The companion `System.Resources.Extensions`
   assembly and how `.resx` resources are read without the BinaryFormatter.
