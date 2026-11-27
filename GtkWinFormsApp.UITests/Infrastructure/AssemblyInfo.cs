@@ -1,4 +1,6 @@
-// GTK is single-threaded: every widget touched by these tests must be created and driven on one thread.
-// xUnit runs test classes in parallel by default, which would call into GTK from several threads at once
-// and crash the host. Serialize the whole assembly.
+using Gtk.Windows.Forms.Automation.Xunit;
+
+// GTK is single-threaded, and on Windows GDK 4 needs that thread to be an STA: run every test on the one
+// thread the automation adapter owns, and never two at once.
+[assembly: TestFramework(GtkTestFramework.TypeName, GtkTestFramework.AssemblyName)]
 [assembly: CollectionBehavior(DisableTestParallelization = true)]

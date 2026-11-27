@@ -20,6 +20,10 @@ public class Form1Tests
             Assert.True(form.flowLayoutPanel1.Controls.Count >= 80,
                 $"Expected at least the 80 constructed buttons but got {form.flowLayoutPanel1.Controls.Count}.");
 
+            // The picker starts at DateTime.Now; pin it (inside its designer MinDate..MaxDate) so the baseline
+            // does not carry the clock.
+            form.dateTimePicker1.Value = new DateTime(2025, 6, 15, 10, 30, 0);
+            ctx.Pump();
             ctx.Shot("loaded");
         });
     }

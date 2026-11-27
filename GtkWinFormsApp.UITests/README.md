@@ -2,7 +2,8 @@
 
 Automated UI regression tests that drive the **real `GtkWinFormsApp` sample forms** end-to-end — the
 automated replacement for the manual "launch the app and click around" pass the upstream author does by
-hand. See [SampleUITests-Plan.md](../SampleUITests-Plan.md) for the design and the decisions behind it.
+hand. It runs on the shippable [Gtk.Windows.Forms.Automation](../Gtk.Windows.Forms.Automation/README.md)
+packages, so it doubles as their end-to-end example on a real application.
 
 ## What it does
 
@@ -24,15 +25,18 @@ Both oracles run on the **test thread** (the form is shown non-modally and the G
 dotnet test GtkWinFormsApp.UITests/GtkWinFormsApp.UITests.csproj
 ```
 
-Tests are **serialized** (`DisableTestParallelization`) because GTK is single-threaded.
+Every test runs on the one STA thread owned by `Gtk.Windows.Forms.Automation.Xunit`'s test framework, and
+tests are **serialized** (`DisableTestParallelization`) because GTK is single-threaded.
 
 ## Screenshot baselines
 
-Golden images live in [`Baselines/<Form>/<checkpoint>.png`](Baselines) and are committed. Comparison is
-tolerant (per-channel ≤ 12/255; ≤ 0.5% of pixels may differ) to absorb anti-alias/theme noise.
+Golden images live in [`Baselines/<Form>/<checkpoint>.png`](Baselines) and are committed. Each is the
+form's **client area** (the title bar changes with window focus, so it is left out), rendered from the GTK 4
+render nodes by GTK's software renderer. Comparison is tolerant (per-channel ≤ 12/255; ≤ 0.5% of pixels may
+differ) to absorb anti-alias noise.
 
 - A **missing** baseline is seeded on first run and the check passes — review and commit the PNG; from
-  then on it is a real gate.
+  then on it is a real gate. When the `CI` environment variable is set, a missing baseline fails instead.
 - To **update** baselines after an intentional visual change:
 
   ```sh
@@ -44,14 +48,18 @@ tolerant (per-channel ≤ 12/255; ≤ 0.5% of pixels may differ) to absorb anti-
   `bin/<cfg>/net10.0/TestResults/Screenshots/<Form>/`.
 
 Forms whose content is **time-varying are not screenshot-gated** (state assertions carry them): `Test1`
-seeds its grid with `DateTime.Now.Ticks`, and `Form2`'s enabled timer appends `DateTime.Now` text.
+seeds its grid with `DateTime.Now.Ticks`, and `Form2`'s enabled timer appends `DateTime.Now` text. Form1's
+date picker starts at `DateTime.Now`, so its test pins the value before the shot.
+
+The baselines were generated on Windows with the GTK runtime the build downloads; fonts and theme come
+from the machine, so regenerate them where they will be verified.
 
 ## Environment
 
-Windows desktop with a real display (per the plan, headless CI is out of scope for v1). GTK needs a
-display; capture is done in-process by rendering the widget to a Cairo surface, so it does not depend on
-window focus. Culture is pinned to `en-US` and the sample `theme/` + `Resources/` are copied next to the
-test binaries so rendering is reproducible.
+Windows desktop with a real display; the suite is not run in CI. GTK needs a display, but capture is done
+in-process, so it does not depend on window focus or on other windows overlapping the form. Culture is
+pinned to `en-US` and the sample `theme/` + `Resources/` are copied next to the test binaries so rendering
+is reproducible.
 
 ## How the forms are reached
 
@@ -62,20 +70,22 @@ both of these are reproduced by `GtkSampleAppProjectsHandler` (the `InternalizeD
 `EnsureInternalsVisibleTo` steps) and guarded by a `Prepare.Tests` test — a regeneration that dropped
 either would fail that test, not silently break the suite.
 
-Modal `MessageBox`es that sample handlers pop (e.g. `Form2`'s `FormClosing`) are auto-dismissed by
-installing the library's auto-closing MessageBox with a short timeout — the automated equivalent of the
-tester clicking **OK**.
+Modal `MessageBox`es that sample handlers pop (e.g. `Form2`'s `FormClosing`) never block: the automation
+session intercepts `MessageBox` and answers at once with the box's default button — the automated
+equivalent of the tester clicking **OK**. A test that needs another answer queues it with
+`UiAutomation.MessageBoxes.Enqueue(...)`.
+
+Input goes through the automation driver, which refuses a control that is disabled or hidden (itself or
+through a parent), as a user could not click it either.
 
 ## Layout
 
 ```
 Infrastructure/
-  UiApp.cs           one-time GTK/WinForms + culture + auto-close-MessageBox startup
-  UiDriver.cs        Show + pump + teardown; raises wired event handlers (the "click")
-  UiContext.cs       the per-test scripting surface (Click/Type/Select/Shot)
-  Screenshots.cs     in-process Cairo capture + baseline gate/seed/update
-  ImageComparer.cs   tolerant PNG compare (ImageSharp)
-  TestPaths.cs       locates committed Baselines/ vs. output artifacts
+  AssemblyInfo.cs    activates the automation xUnit framework (one STA thread) and serializes tests
+  UiApp.cs           one-time session startup: culture + System.Drawing Unix switch
+  UiDriver.cs        Run(create, script): show via UiAutomation.Show, always tear down
+  UiContext.cs       the per-test surface over FormDriver (Click/Type/Select/Shot, Driver for the rest)
 Forms/               one test class per sample form
 Baselines/           committed golden PNGs
 ```

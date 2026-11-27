@@ -16,7 +16,6 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
@@ -24,8 +23,10 @@
   <ItemGroup>
     <!-- Drives the real sample forms end-to-end. net10 test consumes the net8 sample assembly. -->
     <ProjectReference Include="..\GtkWinFormsApp\GtkWinFormsApp.csproj" />
-    <!-- AutoClosingMessageBox: the harness installs it so modal dialogs self-dismiss (see UiApp). -->
-    <ProjectReference Include="..\Gtk.Windows.Extensions\Gtk.Windows.Extensions.csproj" />
+    <!-- The automation framework this suite runs on: driver, scripted MessageBox, capture + baselines, and
+         the single-thread xUnit framework GTK needs. -->
+    <ProjectReference Include="..\Gtk.Windows.Forms.Automation\Gtk.Windows.Forms.Automation.csproj" />
+    <ProjectReference Include="..\Gtk.Windows.Forms.Automation.Xunit\Gtk.Windows.Forms.Automation.Xunit.csproj" />
   </ItemGroup>
 
   <ItemGroup>
