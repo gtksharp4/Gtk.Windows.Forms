@@ -62,6 +62,11 @@ Supporting assemblies around that core:
   library so it stays a faithful compatibility layer. Ships `AutoClosingMessageBox`; it is also the
   place for a consumer's own extension classes over the Forms library. Unlike the two libraries above,
   it is **hand-maintained**, not produced by the prepare pipeline.
+- **`Gtk.Windows.Forms.Automation`** (+ **`Gtk.Windows.Forms.Automation.Xunit`**) — published, hand-maintained:
+  in-process UI automation for applications on this framework. Drives forms at the WinForms API level on
+  the single GTK thread, intercepts `MessageBox`, and captures controls from their GTK 4 render nodes into
+  Gtk.Drawing bitmaps for baseline comparison. The Xunit package supplies the one-STA-thread test
+  framework GTK needs. `GtkWinFormsApp.UITests` runs on it.
 
 ## The core pattern: public WinForms facade + GTK "base" widget
 
