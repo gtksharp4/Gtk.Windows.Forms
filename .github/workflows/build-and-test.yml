@@ -92,6 +92,7 @@ jobs:
             Gtk.Windows.FormsDesigner.Tests/Gtk.Windows.FormsDesigner.Tests.csproj
             ResxProcessor.Tests/ResxProcessor.Tests.csproj
             AutoClosingMessageBox.Tests/AutoClosingMessageBox.Tests.csproj
+            Gtk.Windows.Forms.Automation.Tests/Gtk.Windows.Forms.Automation.Tests.csproj
           )
           # Per-OS native-GTK wiring for the test run (not the build):
           #   Linux  - run under a virtual X server; GTK 4 on the runner has no Wayland, so force X11.
@@ -106,8 +107,15 @@ jobs:
           # Projects that drive GTK. On macOS these run through MainThreadTestHost instead of vstest (see the
           # header): no .trx is produced for them there, the console output carries the results.
           main_thread_projects=" Gtk.Drawing.Tests Gtk.Windows.Forms.Tests AutoClosingMessageBox.Tests "
+          # GTK projects with no MainThreadTestHost entry point yet: under vstest on macOS GTK would run off the
+          # main thread, so they run on Windows and Linux only.
+          windows_linux_only=" Gtk.Windows.Forms.Automation.Tests "
           for p in "${projects[@]}"; do
             name="$(basename "$p" .csproj)"
+            if [ "$RUNNER_OS" = "macOS" ] && [[ "$windows_linux_only" == *" $name "* ]]; then
+              echo "::notice::Skipping $name on macOS: it has no main-thread test host."
+              continue
+            fi
             if [ "$RUNNER_OS" = "macOS" ] && [[ "$main_thread_projects" == *" $name "* ]]; then
               # Run from the output folder, as vstest would, so relative test paths resolve the same way.
               # AutoClosingMessageBox.Tests is not in the NonWindows solution filter (it pulls in a sample app

@@ -55,7 +55,9 @@ dotnet run --project GtkWinFormsApp/GtkWinFormsApp.csproj
 dotnet run --project PrepareProjects/PrepareProjects.csproj
 ```
 
-Test projects (all xUnit + `Microsoft.NET.Test.Sdk`): `Gtk.Windows.Forms.Tests`, `Gtk.Drawing.Tests`, `Gtk.Windows.FormsDesigner.Tests`, `ResxProcessor.Tests`, `AutoClosingMessageBox.Tests`, and `Prepare.Tests` (tests the pipeline, in `PrepareProjects.sln`).
+Test projects (all xUnit + `Microsoft.NET.Test.Sdk`): `Gtk.Windows.Forms.Tests`, `Gtk.Drawing.Tests`, `Gtk.Windows.FormsDesigner.Tests`, `ResxProcessor.Tests`, `AutoClosingMessageBox.Tests`, `Gtk.Windows.Forms.Automation.Tests`, `GtkWinFormsApp.UITests` (drives the sample forms; needs a desktop, not run in CI), and `Prepare.Tests` (tests the pipeline, in `PrepareProjects.sln`).
+
+UI automation for consumers ships as `Gtk.Windows.Forms.Automation` (+ `.Xunit`), hand-maintained like `Gtk.Windows.Extensions`. GTK test code must run on one thread: test projects that create controls use an STA test framework (the `.Xunit` package's `GtkTestFramework`, or the linked `StaTestFramework.cs` copies).
 
 ## Build configuration
 
