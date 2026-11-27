@@ -119,7 +119,16 @@ public class MenuAndStripRenderingTests
             },
             ctx =>
             {
-                UiDriver.Pump(40);
+                // The window grows on later frame ticks, so a fixed number of pumps raced with the clock and
+                // failed intermittently (also before the move onto Gtk.Windows.Forms.Automation). Wait for it.
+                try
+                {
+                    ctx.Driver.WaitUntil(() => ctx.Form.ClientSize.Height > 200, TimeSpan.FromSeconds(3));
+                }
+                catch (TimeoutException)
+                {
+                    // fall through to the assertion, which reports the height actually reached
+                }
 
                 Assert.True(ctx.Form.ClientSize.Height > 200,
                     $"expected the window to grow past its designed height to reveal the control, got {ctx.Form.ClientSize.Height}");

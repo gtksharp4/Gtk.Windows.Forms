@@ -1,53 +1,42 @@
 using System.Windows.Forms;
+using Gtk.Windows.Forms.Automation;
 
 namespace GtkWinFormsApp.UITests.Infrastructure;
 
 /// <summary>
-/// The scripting surface handed to a test body: the form under test plus the API-level "input" verbs
-/// (click, type, select) and the screenshot checkpoint. Every verb pumps the GTK loop afterwards so the
-/// resulting layout/paint is in place before the next assertion or capture.
+/// The scripting surface handed to a test body: the form under test, the automation driver's input verbs,
+/// and the screenshot checkpoint gated against <c>Baselines/&lt;Form&gt;/&lt;checkpoint&gt;.png</c>.
 /// </summary>
 internal sealed class UiContext
 {
-    internal UiContext(Form form) => Form = form;
+    private static readonly Lazy<BaselineStore> Baselines = new(() => BaselineStore.InProjectDirectory("Baselines"));
+
+    internal UiContext(FormDriver driver) => Driver = driver;
+
+    /// <summary>The automation driver, for verbs this wrapper does not repeat (Find, PressKey, Check, ...).</summary>
+    internal FormDriver Driver { get; }
 
     /// <summary>The form under test.</summary>
-    internal Form Form { get; }
+    internal Form Form => Driver.Form;
 
     /// <summary>Pumps the GTK main loop so pending work settles.</summary>
-    internal void Pump(int iterations = 12) => UiDriver.Pump(iterations);
+    internal void Pump(int iterations = 12) => Driver.Pump(iterations);
 
-    /// <summary>Clicks a button/control by raising its wired <c>Click</c> handler, then pumps.</summary>
-    internal void Click(Control control)
-    {
-        UiDriver.RaiseProtected(control, "OnClick");
-        Pump();
-    }
+    /// <summary>Clicks a control as a user would (refused if it is disabled or hidden), then pumps.</summary>
+    internal void Click(Control control) => Driver.Click(control);
 
-    /// <summary>Sets a text control's value (raising its <c>TextChanged</c> path), then pumps.</summary>
-    internal void Type(Control textControl, string text)
-    {
-        textControl.Text = text;
-        Pump();
-    }
+    /// <summary>Replaces a text control's value (raising <c>TextChanged</c>), then pumps.</summary>
+    internal void Type(Control textControl, string text) => Driver.Type(textControl, text);
 
     /// <summary>Selects an item in a combo box by index, then pumps.</summary>
-    internal void Select(ComboBox combo, int index)
-    {
-        combo.SelectedIndex = index;
-        Pump();
-    }
+    internal void Select(ComboBox combo, int index) => Driver.Select(combo, index);
 
     /// <summary>Selects an item in a list box by index, then pumps.</summary>
-    internal void Select(ListBox list, int index)
-    {
-        list.SelectedIndex = index;
-        Pump();
-    }
+    internal void Select(ListBox list, int index) => Driver.Select(list, index);
 
     /// <summary>
-    /// Captures the form window and compares it to its committed baseline (or updates the baseline when
-    /// <c>UPDATE_UI_BASELINES=1</c>). <paramref name="checkpoint"/> names the visual state.
+    /// Captures the form's client area and compares it with its committed baseline (or rewrites the baseline
+    /// when <c>UPDATE_UI_BASELINES=1</c>). <paramref name="checkpoint"/> names the visual state.
     /// </summary>
-    internal void Shot(string checkpoint) => Screenshots.Capture(Form, checkpoint);
+    internal void Shot(string checkpoint) => Baselines.Value.Verify(Form, $"{Form.GetType().Name}/{checkpoint}");
 }
